@@ -8,13 +8,17 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: mydb
     ports:
-      - "5432:5432"
+      - "65432:5432"
+    networks:
+      - backend
     volumes:
       - postgres_data:/var/lib/postgresql/data
   app:
     build: .
     ports:
       - "8080:8080"
+    networks:
+      - backend
     depends_on:
       - db
     environment:
@@ -24,3 +28,7 @@ services:
       DB_NAME: mydb
 volumes:
   postgres_data:
+networks:
+  backend:
+    driver: bridge
+    external: true

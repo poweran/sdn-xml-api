@@ -1,7 +1,7 @@
-FROM golang:1.17-alpine
+FROM golang:1.20-alpine
 
 # Устанавливаем зависимости
-RUN apk update && apk add --no-cache make git
+RUN apk update && apk add --no-cache make git postgresql-client
 
 # Копируем все файлы приложения внутрь контейнера
 WORKDIR /app
