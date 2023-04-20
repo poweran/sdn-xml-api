@@ -31,17 +31,15 @@ func initRouter(db *sql.DB) *mux.Router {
 			return
 		}
 
-		go func() {
-			if err := repository.Update(db); err != nil {
-				log.Println("Error updating:", err)
-				setState(state{updating: false})
-				w.WriteHeader(http.StatusServiceUnavailable)
-				w.Write([]byte(`{"result": false, "info": "service unavailable"}`))
-				return
-			}
-
+		if err := repository.Update(db); err != nil {
+			log.Println("Error updating:", err)
 			setState(state{updating: false})
-		}()
+			w.WriteHeader(http.StatusServiceUnavailable)
+			w.Write([]byte(`{"result": false, "info": "service unavailable"}`))
+			return
+		}
+
+		setState(state{updating: false})
 
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`{"result": true, "info": "", "code": 200}`))

@@ -3,40 +3,80 @@ package repository
 import (
 	"database/sql"
 	"encoding/xml"
+	"github.com/lib/pq"
 	"net/http"
 )
 
-// SDNList структура для представления списка записей в таблице people
-type SDNList struct {
+// sdnList структура для представления списка записей в таблице people
+type sdnList struct {
 	XMLName xml.Name `xml:"sdnList"`
 	SDNs    []Person `xml:"sdnEntry"`
 }
 
 // Person структура для представления записей в таблице people
 type Person struct {
-	UID       int    `json:"uid"`
-	FirstName string `json:"first_name"`
-	LastName  string `json:"last_name"`
-	SDNType   string `json:"sdn_type"`
+	UID       int    `json:"uid"       xml:"uid"`
+	FirstName string `json:"firstName" xml:"firstName"`
+	LastName  string `json:"lastName"  xml:"lastName"`
+	SDNType   string `json:"sdnType"   xml:"sdnType"`
 }
 
 // InsertPerson вставляет запись о человеке в таблицу people в БД
 func InsertPerson(db *sql.DB, person Person) (int, error) {
 	// Выполняем SQL-запрос на вставку записи
-	stmt, err := db.Prepare("SELECT insert_person($1, $2, $3)")
+	stmt, err := db.Prepare("SELECT insert_person($1, $2, $3, $4)")
 	if err != nil {
 		return 0, err
 	}
 	defer stmt.Close()
 
-	var uid int
-	// Извлекаем UID созданной записи о человеке
-	err = stmt.QueryRow(person.FirstName, person.LastName, person.SDNType).Scan(&uid)
-	if err != nil {
-		return 0, err
+	stmt.QueryRow(person.UID, person.FirstName, person.LastName, person.SDNType)
+
+	return person.UID, nil
+}
+
+func InsertPeople(db *sql.DB, people []Person) error {
+	if len(people) == 0 {
+		return nil
 	}
 
-	return uid, nil
+	// Настройка COPY FROM запроса
+	schemaName := "public"
+	tableName := "people"
+	columns := []string{"uid", "first_name", "last_name", "sdn_type"}
+
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+
+	stmt, err := tx.Prepare(pq.CopyInSchema(schemaName, tableName, columns...))
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err := stmt.Close(); err != nil {
+			panic(err)
+		}
+	}()
+
+	//loop through an array of struct filled with data, or read from a file
+	for _, row := range people {
+		_, err := stmt.Exec(row.UID, row.FirstName, row.LastName, row.SDNType)
+		if err != nil {
+			return err
+		}
+	}
+
+	if _, err = stmt.Exec(); err != nil {
+		return err
+	}
+
+	if err = tx.Commit(); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // GetPeople возвращает всех людей из таблицы people в БД, соответствующих заданным параметрам
@@ -84,17 +124,21 @@ func Update(db *sql.DB) error {
 	}
 
 	// Сохраняем записи с sdnType=Individual в таблицу people
+	var people []Person
 	for _, item := range data {
 		if item.SDNType == "Individual" {
 			person := Person{
+				UID:       item.UID,
 				FirstName: item.FirstName,
 				LastName:  item.LastName,
 				SDNType:   item.SDNType,
 			}
-			if _, err := InsertPerson(db, person); err != nil {
-				return err
-			}
+			people = append(people, person)
 		}
+	}
+
+	if err := InsertPeople(db, people); err != nil {
+		return err
 	}
 	return nil
 }
@@ -107,7 +151,7 @@ func fetchData() ([]Person, error) {
 	defer resp.Body.Close()
 
 	// Преобразуем XML в структуру данных
-	var result SDNList
+	var result sdnList
 	err = xml.NewDecoder(resp.Body).Decode(&result)
 	if err != nil {
 		return nil, err

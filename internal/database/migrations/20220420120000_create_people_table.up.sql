@@ -12,10 +12,14 @@ CREATE INDEX IF NOT EXISTS people_last_name_idx ON people (last_name);
 CREATE INDEX IF NOT EXISTS people_sdn_type_idx ON people (sdn_type);
 
 -- Создание функции insert_person для вставки данных в таблицу people:
-CREATE OR REPLACE FUNCTION insert_person(p_first_name VARCHAR(255), p_last_name VARCHAR(255), p_sdn_type VARCHAR(255))
-    RETURNS VOID AS $$
+CREATE OR REPLACE FUNCTION insert_person(p_uid INTEGER, p_first_name VARCHAR(255), p_last_name VARCHAR(255), p_sdn_type VARCHAR(255))
+    RETURNS INTEGER AS $$
+DECLARE
+    inserted_id INTEGER;
 BEGIN
-    INSERT INTO people (first_name, last_name, sdn_type) VALUES (p_first_name, p_last_name, p_sdn_type);
+    INSERT INTO people (uid, first_name, last_name, sdn_type) VALUES (p_uid, p_first_name, p_last_name, p_sdn_type)
+    RETURNING uid INTO inserted_id;
+    RETURN inserted_id;
 END;
 $$ LANGUAGE plpgsql;
 
