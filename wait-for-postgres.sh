@@ -30,7 +30,7 @@ retry() {
   done
 }
 
-retry 5 1 pg_isready --dbname=mydb --host=localhost --port=5432 --username=postgres >/dev/null
+retry 5 1 pg_isready --dbname=mydb --host=localhost --port=65432 --username=postgres >/dev/null
 
 echo >&2 "$(date +%Y%m%dt%H%M%S) Postgres is up - executing command"
 

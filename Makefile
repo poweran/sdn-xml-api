@@ -2,7 +2,7 @@
 
 POSTGRES_PASSWORD=postgres
 POSTGRES_DB=mydb
-DB_CONNECTION_STRING ?= "postgres://postgres:$(POSTGRES_PASSWORD)@localhost:5432/$(POSTGRES_DB)?sslmode=disable"
+DB_CONNECTION_STRING ?= "postgres://postgres:$(POSTGRES_PASSWORD)@localhost:65432/$(POSTGRES_DB)?sslmode=disable"
 MIGRATE_VERSION=latest
 POSTGRES_DRIVER_VERSION=latest
 
@@ -18,14 +18,14 @@ build-migrate:
 	chmod +x ./bin/migrate
 
 create-docker-network:
-	docker network create backend
+	docker network create backend || true
 
 start-db-server:
 	docker-compose -p sdn-xml-api up -d db
 	POSTGRES_DB=$(POSTGRES_DB) POSTGRES_USER=$(POSTGRES_USER) ./wait-for-postgres.sh
 
 create-db:
-	PGPASSWORD=$(POSTGRES_PASSWORD) createdb -U postgres $(POSTGRES_DB) -h localhost -p 5432 || true
+	PGPASSWORD=$(POSTGRES_PASSWORD) createdb -U postgres $(POSTGRES_DB) -h localhost -p 65432 || true
 
 migrate-up:
 	./bin/migrate -database $(DB_CONNECTION_STRING) -path internal/database/migrations up
