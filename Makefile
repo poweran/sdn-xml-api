@@ -1,12 +1,10 @@
-.PHONY: install create-bin-dir install-migrate build-migrate create-db migrate-up
+.PHONY: create-bin-dir install-migrate build-migrate create-docker-network start-db-server create-db migrate-up start-app
 
-PG_PASSWORD=postgres
-DB_CONNECTION_STRING ?= "postgres://postgres:$(PG_PASSWORD)@localhost:65432/mydb?sslmode=disable"
+POSTGRES_PASSWORD=postgres
+POSTGRES_DB=mydb
+DB_CONNECTION_STRING ?= "postgres://postgres:$(POSTGRES_PASSWORD)@localhost:5432/$(POSTGRES_DB)?sslmode=disable"
 MIGRATE_VERSION=latest
 POSTGRES_DRIVER_VERSION=latest
-
-install:
-	go install github.com/example/myapp
 
 create-bin-dir:
 	mkdir -p bin
@@ -19,8 +17,15 @@ build-migrate:
 	go build -tags 'postgres' -ldflags="-X github.com/golang-migrate/migrate/v4/cmd/migrate.Version=$(MIGRATE_VERSION)" -o ./bin/migrate github.com/golang-migrate/migrate/v4/cmd/migrate
 	chmod +x ./bin/migrate
 
+create-docker-network:
+	docker network create backend
+
+start-db-server:
+	docker-compose -p sdn-xml-api up -d db
+	POSTGRES_DB=$(POSTGRES_DB) POSTGRES_USER=$(POSTGRES_USER) ./wait-for-postgres.sh
+
 create-db:
-	PGPASSWORD=$(PG_PASSWORD) createdb -U postgres mydb -h localhost -p 65432 || true
+	PGPASSWORD=$(POSTGRES_PASSWORD) createdb -U postgres $(POSTGRES_DB) -h localhost -p 5432 || true
 
 migrate-up:
 	./bin/migrate -database $(DB_CONNECTION_STRING) -path internal/database/migrations up
@@ -31,4 +36,7 @@ migrate-down:
 migrate-force:
 	./bin/migrate -database $(DB_CONNECTION_STRING) -path internal/database/migrations force 20220420120000
 
-install-all: create-bin-dir install-migrate build-migrate create-db migrate-up
+start-app:
+	docker-compose -p sdn-xml-api up -d app
+
+install-all: create-bin-dir install-migrate build-migrate create-docker-network start-db-server create-db migrate-up start-app

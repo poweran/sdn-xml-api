@@ -27,7 +27,7 @@ func initRouter(db *sql.DB) *mux.Router {
 	r.HandleFunc("/update", func(w http.ResponseWriter, r *http.Request) {
 		if _, updating := getState(); updating {
 			w.WriteHeader(http.StatusServiceUnavailable)
-			w.Write([]byte(`{"result": false, "info": "updating"}`))
+			writeStringToRW(w, `{"result": false, "info": "updating"}`)
 			return
 		}
 
@@ -35,14 +35,14 @@ func initRouter(db *sql.DB) *mux.Router {
 			log.Println("Error updating:", err)
 			setState(state{updating: false})
 			w.WriteHeader(http.StatusServiceUnavailable)
-			w.Write([]byte(`{"result": false, "info": "service unavailable"}`))
+			writeStringToRW(w, `{"result": false, "info": "service unavailable"}`)
 			return
 		}
 
 		setState(state{updating: false})
 
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"result": true, "info": "", "code": 200}`))
+		writeStringToRW(w, `{"result": true, "info": "", "code": 200}`)
 	})
 
 	r.HandleFunc("/state", func(w http.ResponseWriter, r *http.Request) {
@@ -50,18 +50,18 @@ func initRouter(db *sql.DB) *mux.Router {
 
 		if updating {
 			w.WriteHeader(http.StatusServiceUnavailable)
-			w.Write([]byte(`{"result": false, "info": "updating"}`))
+			writeStringToRW(w, `{"result": false, "info": "updating"}`)
 			return
 		}
 
 		if len(s.names) == 0 {
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`{"result": false, "info": "empty"}`))
+			writeStringToRW(w, `{"result": false, "info": "empty"}`)
 			return
 		}
 
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"result": true, "info": "ok"}`))
+		writeStringToRW(w, `{"result": true, "info": "ok"}`)
 	})
 
 	r.HandleFunc("/get_names", func(w http.ResponseWriter, r *http.Request) {
@@ -69,7 +69,7 @@ func initRouter(db *sql.DB) *mux.Router {
 
 		if updating {
 			w.WriteHeader(http.StatusServiceUnavailable)
-			w.Write([]byte(`{"result": false, "info": "updating"}`))
+			writeStringToRW(w, `{"result": false, "info": "updating"}`)
 			return
 		}
 
@@ -78,7 +78,7 @@ func initRouter(db *sql.DB) *mux.Router {
 
 		if name == "" {
 			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte(`{"result": false, "info": "missing name parameter"}`))
+			writeStringToRW(w, `{"result": false, "info": "missing name parameter"}`)
 			return
 		}
 
@@ -96,19 +96,19 @@ func initRouter(db *sql.DB) *mux.Router {
 
 		if len(result) == 0 {
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`{"result": false, "info": "no matches"}`))
+			writeStringToRW(w, `{"result": false, "info": "no matches"}`)
 			return
 		}
 
 		b, err := json.Marshal(result)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(`{"result": false, "info": "error marshalling result"}`))
+			writeStringToRW(w, `{"result": false, "info": "error marshalling result"}`)
 			return
 		}
 
 		w.WriteHeader(http.StatusOK)
-		w.Write(b)
+		writeBytesToRW(w, b)
 	})
 
 	return r
@@ -124,4 +124,14 @@ func getState() (state, bool) {
 	mutex.RLock()
 	defer mutex.RUnlock()
 	return appState, appState.updating
+}
+
+func writeBytesToRW(w http.ResponseWriter, b []byte) {
+	if _, err := w.Write(b); err != nil {
+		log.Println(err.Error())
+	}
+}
+
+func writeStringToRW(w http.ResponseWriter, s string) {
+	writeBytesToRW(w, []byte(s))
 }

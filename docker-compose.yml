@@ -1,34 +1,47 @@
-version: '3'
+# Docker-compose файл для запуска обоих контейнеров
+version: "3.9"
+
 services:
   db:
-    image: postgres:14-alpine
-    restart: always
+    build:
+      context: .
+      dockerfile: db.Dockerfile
     environment:
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: postgres
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: mydb
+      POSTGRES_DB: postgres
     ports:
-      - "65432:5432"
+      - "5432:5432"
     networks:
-      - backend
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+      backend:
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready" ]
+      interval: 1s
+      timeout: 5s
+      retries: 5
   app:
-    build: .
+    build:
+      context: .
+      dockerfile: ap.Dockerfile
     ports:
       - "8080:8080"
-    networks:
-      - backend
+    expose:
+      - 8080
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+    networks:
+      backend:
     environment:
-      DB_HOST: db
-      DB_USER: postgres
-      DB_PASSWORD: postgres
-      DB_NAME: mydb
-volumes:
-  postgres_data:
+      DB_HOST: "db"
+      DB_PORT: "5432"
+      DB_USER: "postgres"
+      DB_PASS: "postgres"
+      DB_NAME: "mydb"
+
 networks:
   backend:
-    driver: bridge
     external: true
