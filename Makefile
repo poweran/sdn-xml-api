@@ -22,7 +22,7 @@ create-docker-network:
 
 start-db-server:
 	docker-compose -p sdn-xml-api up -d db
-	POSTGRES_DB=$(POSTGRES_DB) POSTGRES_USER=$(POSTGRES_USER) ./wait-for-postgres.sh
+	POSTGRES_DB=$(POSTGRES_DB) POSTGRES_USER=$(POSTGRES_USER) ./bin/wait-for-postgres.sh
 
 create-db:
 	PGPASSWORD=$(POSTGRES_PASSWORD) createdb -U postgres $(POSTGRES_DB) -h localhost -p 65432 || true

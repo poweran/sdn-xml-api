@@ -1,14 +1,15 @@
 ### Установка и запуск:
-Установить **Docker**
+1) Установить **Docker**
 
-Установить **make**
+2) Установить **make**
 
-Выполнить `make install-all`
+3) Выполнить `make install-all`
 
 ### Структура проекта:
     .
     ├── bin/
     │   └── migrate
+    │   └── wait-for-postgres.sh
     ├── cmd/
     │   └── myserver/
     │       └── main.go
@@ -36,8 +37,6 @@
     └── docker-compose.yml
     └── go.mod
     └── go.sum
-    └── init-user-db.sh
     └── LICENSE
     └── Makefile
     └── README.md
-    └── wait-for-postgres.sh
