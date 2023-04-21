@@ -6,9 +6,12 @@
     ├── cmd/
     │   └── myserver/
     │       └── main.go
+    │       └── router.go
+    ├── config/
+    │   └── config.go
+    │   └── config.yaml
+    │   └── config-local.yaml
     ├── internal/
-    │   ├── config/
-    │   │   └── config.go
     │   ├── database/
     │   │   ├── migrations/
     │   │   │   └── 20220420120000_create_people_table.down.sql
@@ -19,23 +22,16 @@
     │   │   └── repository/
     │   │       ├── people.go
     │   │       └── people_test.go
-    │   ├── handler/
-    │   │   ├── get_names.go
-    │   │   ├── state.go
-    │   │   └── update.go
-    │   ├── model/
-    │   │   └── person.go
-    │   ├── service/
-    │   │   ├── ofac/
-    │   │   │   ├── ofac.go
-    │   │   │   └── ofac_test.go
-    │   │   └── person/
-    │   │       ├── person.go
-    │   │       └── person_test.go
     │   └── util/
-    │       ├── json.go
-    │       ├── response.go
-    │       └── util_test.go
-    ├── static/
-    │   └── index.html
+    │       ├── response_writer.go
+    └── .gitignore
+    └── ap.Dockerfile
+    └── db.Dockerfile
+    └── docker-compose.yml
     └── go.mod
+    └── go.sum
+    └── init-user-db.sh
+    └── LICENSE
+    └── Makefile
+    └── README.md
+    └── wait-for-postgres.sh
