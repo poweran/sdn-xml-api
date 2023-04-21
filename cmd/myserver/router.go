@@ -31,7 +31,8 @@ func initRouter(db *sql.DB) *mux.Router {
 			return
 		}
 
-		if err := repository.Update(db); err != nil {
+		people, err := repository.Update(db)
+		if err != nil {
 			log.Println("Error updating:", err)
 			setState(state{updating: false})
 			w.WriteHeader(http.StatusServiceUnavailable)
@@ -39,7 +40,7 @@ func initRouter(db *sql.DB) *mux.Router {
 			return
 		}
 
-		setState(state{updating: false})
+		setState(state{updating: false, names: people})
 
 		w.WriteHeader(http.StatusOK)
 		writeStringToRW(w, `{"result": true, "info": "", "code": 200}`)

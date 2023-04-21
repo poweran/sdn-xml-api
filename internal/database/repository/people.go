@@ -109,22 +109,22 @@ func GetPeople(db *sql.DB, name string, matchType string) ([]Person, error) {
 	return people, nil
 }
 
-// Update Получает данные из https://www.treasury.gov/ofac/downloads/sdn.xml и сохраняет их в локальную базу данных PostgreSQL
-func Update(db *sql.DB) error {
+// Update Получает данные из https://www.treasury.gov/ofac/downloads/sdn.xml и сохраняет их в локальную базу данных
+// PostgreSQL. Возвращает список полученных персон.
+func Update(db *sql.DB) (people []Person, err error) {
 	// Получаем данные из внешнего источника
 	data, err := fetchData()
 	if err != nil {
-		return err
+		return people, err
 	}
 
 	// Удаляем все записи из таблицы people, чтобы заменить их на новые
 	_, err = db.Exec("DELETE FROM people")
 	if err != nil {
-		return err
+		return people, err
 	}
 
 	// Сохраняем записи с sdnType=Individual в таблицу people
-	var people []Person
 	for _, item := range data {
 		if item.SDNType == "Individual" {
 			person := Person{
@@ -138,9 +138,9 @@ func Update(db *sql.DB) error {
 	}
 
 	if err := InsertPeople(db, people); err != nil {
-		return err
+		return people, err
 	}
-	return nil
+	return people, nil
 }
 
 func fetchData() ([]Person, error) {
